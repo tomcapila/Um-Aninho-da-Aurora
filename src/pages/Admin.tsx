@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, User, Phone, Check, X, Users } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, User, Phone, Check, X, Users, Lock, LogOut } from "lucide-react";
 
 interface Guest {
   id: string;
@@ -15,6 +15,12 @@ interface Guest {
 }
 
 const Admin = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
@@ -22,8 +28,53 @@ const Admin = () => {
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    fetchGuests();
+    // Check if already authenticated
+    const token = localStorage.getItem("aurora_admin_token");
+    if (token) {
+      setIsAuthenticated(true);
+    }
+    setCheckingAuth(false);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchGuests();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-auth", {
+        body: { username, password },
+      });
+
+      if (error) throw error;
+
+      if (data.success && data.token) {
+        localStorage.setItem("aurora_admin_token", data.token);
+        setIsAuthenticated(true);
+        toast.success("Login realizado com sucesso!");
+      } else {
+        toast.error(data.error || "Erro ao fazer login");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error("Usuário ou senha inválidos");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("aurora_admin_token");
+    setIsAuthenticated(false);
+    setUsername("");
+    setPassword("");
+    toast.success("Logout realizado");
+  };
 
   const fetchGuests = async () => {
     const { data, error } = await supabase
@@ -95,18 +146,101 @@ const Admin = () => {
   const confirmedCount = guests.filter((g) => g.confirmed).length;
   const totalCount = guests.length;
 
+  // Loading state while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
+
+  // Login form
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          <div className="bg-card/90 backdrop-blur-sm rounded-2xl p-8 shadow-aurora-lg border">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto bg-secondary rounded-full flex items-center justify-center mb-4">
+                <Lock className="w-8 h-8 text-primary" />
+              </div>
+              <h1 className="text-2xl font-display font-bold text-foreground">
+                Área Administrativa
+              </h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                Aurora - 1º Aniversário
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="Usuário"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="h-12"
+                  autoComplete="username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-12"
+                  autoComplete="current-password"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={authLoading || !username || !password}
+                className="w-full h-12 text-lg font-semibold shadow-aurora"
+              >
+                {authLoading ? "Entrando..." : "Entrar"}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <Link
+                to="/"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ← Voltar para o convite
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Admin panel (authenticated)
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-2xl px-4 py-8">
         {/* Header */}
         <header className="mb-8">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar para o convite
-          </Link>
+          <div className="flex items-center justify-between mb-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar para o convite
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
 
           <h1 className="text-3xl font-display font-bold text-foreground">
             Gerenciar Convidados
