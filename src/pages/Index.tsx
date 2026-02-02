@@ -50,34 +50,47 @@ const Index = () => {
         </header>
 
         {/* Event Details */}
-        <div className="max-w-md mx-auto mb-12 md:mb-16 animate-slide-up">
+        <div className="max-w-md mx-auto mb-8 md:mb-12 animate-slide-up">
           <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-aurora-lg border">
             <div className="grid grid-cols-2 gap-6 text-center">
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm uppercase tracking-wide">Data</p>
                 <p className="font-display text-xl font-semibold text-foreground">
-                  15 de Março
+                  14 de Março
                 </p>
-                <p className="text-muted-foreground">Sábado</p>
+                <p className="text-muted-foreground">Sábado, 2026</p>
               </div>
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm uppercase tracking-wide">Horário</p>
                 <p className="font-display text-xl font-semibold text-foreground">
-                  15:00
+                  13:00
                 </p>
-                <p className="text-muted-foreground">às 20:00</p>
+                <p className="text-muted-foreground">em ponto</p>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="border-t border-border mt-6 pt-6 text-center">
-              <p className="text-muted-foreground text-sm uppercase tracking-wide mb-1">Local</p>
-              <p className="font-display text-lg font-semibold text-foreground">
-                Salão de Festas
-              </p>
-              <p className="text-muted-foreground text-sm">
-                Rua das Flores, 123 - São Paulo
-              </p>
-            </div>
+        {/* Gift Suggestions */}
+        <div className="max-w-md mx-auto mb-12 md:mb-16 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 shadow-aurora border">
+            <p className="text-muted-foreground text-sm uppercase tracking-wide text-center mb-4">
+              🎁 Dicas de Presentes
+            </p>
+            <ul className="space-y-2 text-center text-foreground">
+              <li className="flex items-center justify-center gap-2">
+                <span className="text-aurora-coral">👗</span>
+                <span>Roupas tamanho M (12 a 24 meses)</span>
+              </li>
+              <li className="flex items-center justify-center gap-2">
+                <span className="text-aurora-coral">👟</span>
+                <span>Calçados tamanho 18 a 20</span>
+              </li>
+              <li className="flex items-center justify-center gap-2">
+                <span className="text-aurora-coral">🧸</span>
+                <span>Brinquedos didáticos (1 a 2 anos)</span>
+              </li>
+            </ul>
           </div>
         </div>
 
