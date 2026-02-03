@@ -57,42 +57,48 @@
   }
 
   .dark {
-    --background: 340 30% 8%;
+    --background: 220 50% 5%;
     --foreground: 30 50% 95%;
 
-    --card: 340 30% 10%;
+    --card: 220 40% 8%;
     --card-foreground: 30 50% 95%;
 
-    --popover: 340 30% 10%;
+    --popover: 220 40% 8%;
     --popover-foreground: 30 50% 95%;
 
-    --primary: 340 60% 65%;
-    --primary-foreground: 340 30% 10%;
+    --primary: 160 100% 50%;
+    --primary-foreground: 220 50% 5%;
 
-    --secondary: 340 30% 15%;
+    --secondary: 220 30% 15%;
     --secondary-foreground: 30 50% 95%;
 
-    --muted: 340 30% 15%;
-    --muted-foreground: 30 30% 60%;
+    --muted: 220 30% 15%;
+    --muted-foreground: 30 30% 70%;
 
-    --accent: 35 80% 50%;
-    --accent-foreground: 340 30% 10%;
+    --accent: 195 100% 50%;
+    --accent-foreground: 220 50% 5%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 340 30% 20%;
-    --input: 340 30% 20%;
-    --ring: 340 60% 65%;
+    --border: 220 30% 20%;
+    --input: 220 30% 20%;
+    --ring: 160 100% 50%;
 
-    --sidebar-background: 340 30% 8%;
+    /* Aurora night colors */
+    --aurora-green: 160 100% 50%;
+    --aurora-blue: 195 100% 50%;
+    --aurora-pink: 320 100% 55%;
+    --aurora-night-bg: 220 50% 5%;
+
+    --sidebar-background: 220 50% 5%;
     --sidebar-foreground: 30 50% 95%;
-    --sidebar-primary: 340 60% 65%;
-    --sidebar-primary-foreground: 340 30% 10%;
-    --sidebar-accent: 340 30% 15%;
+    --sidebar-primary: 160 100% 50%;
+    --sidebar-primary-foreground: 220 50% 5%;
+    --sidebar-accent: 220 30% 15%;
     --sidebar-accent-foreground: 30 50% 95%;
-    --sidebar-border: 340 30% 20%;
-    --sidebar-ring: 340 60% 65%;
+    --sidebar-border: 220 30% 20%;
+    --sidebar-ring: 160 100% 50%;
   }
 }
 
@@ -115,6 +121,13 @@
     @apply bg-gradient-to-r from-aurora-pink via-aurora-coral to-aurora-gold bg-clip-text text-transparent;
   }
 
+  .dark .text-gradient-aurora {
+    background: linear-gradient(90deg, hsl(160 100% 50%), hsl(195 100% 50%), hsl(320 100% 55%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   .bg-gradient-aurora {
     background: linear-gradient(135deg, hsl(var(--aurora-cream)) 0%, hsl(var(--aurora-blush)) 50%, hsl(var(--aurora-lavender)) 100%);
   }
@@ -123,12 +136,21 @@
     background: linear-gradient(180deg, hsl(var(--aurora-cream)) 0%, hsl(var(--aurora-blush)) 100%);
   }
 
+  .dark .bg-gradient-hero {
+    background: linear-gradient(180deg, hsl(220 50% 5%) 0%, hsl(220 40% 8%) 100%);
+  }
+
   .shadow-aurora {
     box-shadow: 0 4px 30px -5px hsl(var(--aurora-pink) / 0.3);
   }
 
   .shadow-aurora-lg {
     box-shadow: 0 10px 50px -10px hsl(var(--aurora-pink) / 0.4);
+  }
+
+  .dark .shadow-aurora,
+  .dark .shadow-aurora-lg {
+    box-shadow: 0 0 40px -10px hsl(160 100% 50% / 0.4), 0 0 60px -15px hsl(195 100% 50% / 0.3);
   }
 
   .animate-float {
@@ -145,6 +167,14 @@
 
   .animate-slide-up {
     animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .animate-glow-pulse {
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+
+  .animate-aurora-wave {
+    animation: auroraWave 8s ease-in-out infinite;
   }
 
   @keyframes float {
@@ -165,5 +195,23 @@
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { 
+      box-shadow: 0 0 20px hsl(160 100% 50% / 0.3), 0 0 40px hsl(195 100% 50% / 0.2);
+    }
+    50% { 
+      box-shadow: 0 0 40px hsl(160 100% 50% / 0.5), 0 0 80px hsl(195 100% 50% / 0.3);
+    }
+  }
+
+  @keyframes auroraWave {
+    0%, 100% { 
+      filter: saturate(1.2) brightness(1);
+    }
+    50% { 
+      filter: saturate(1.5) brightness(1.1);
+    }
   }
 }
