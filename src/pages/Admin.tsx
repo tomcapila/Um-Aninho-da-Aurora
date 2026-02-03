@@ -27,13 +27,31 @@ const Admin = () => {
   const [newPhone, setNewPhone] = useState("");
   const [adding, setAdding] = useState(false);
 
+  const getAdminToken = () => localStorage.getItem("aurora_admin_token");
+
   useEffect(() => {
-    // Check if already authenticated
-    const token = localStorage.getItem("aurora_admin_token");
-    if (token) {
-      setIsAuthenticated(true);
-    }
-    setCheckingAuth(false);
+    // Check if already authenticated by validating token server-side
+    const checkAuth = async () => {
+      const token = getAdminToken();
+      if (token) {
+        try {
+          const { data, error } = await supabase.functions.invoke("admin-auth", {
+            body: { action: "validate", token },
+          });
+          
+          if (!error && data.valid) {
+            setIsAuthenticated(true);
+          } else {
+            localStorage.removeItem("aurora_admin_token");
+          }
+        } catch {
+          localStorage.removeItem("aurora_admin_token");
+        }
+      }
+      setCheckingAuth(false);
+    };
+    
+    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -62,7 +80,10 @@ const Admin = () => {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Usuário ou senha inválidos");
+      const errorMessage = error?.message?.includes("429") 
+        ? "Muitas tentativas. Aguarde alguns minutos."
+        : "Usuário ou senha inválidos";
+      toast.error(errorMessage);
     } finally {
       setAuthLoading(false);
     }
@@ -73,22 +94,41 @@ const Admin = () => {
     setIsAuthenticated(false);
     setUsername("");
     setPassword("");
+    setGuests([]);
     toast.success("Logout realizado");
   };
 
   const fetchGuests = async () => {
-    const { data, error } = await supabase
-      .from("guests")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("Erro ao carregar convidados");
+    const token = getAdminToken();
+    if (!token) {
+      handleLogout();
       return;
     }
 
-    setGuests(data || []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-guests", {
+        body: { action: "list" },
+        headers: { "x-admin-token": token },
+      });
+
+      if (error) throw error;
+      
+      if (data.error) {
+        if (data.error.includes("inválido") || data.error.includes("expirado")) {
+          handleLogout();
+          toast.error("Sessão expirada. Faça login novamente.");
+          return;
+        }
+        throw new Error(data.error);
+      }
+
+      setGuests(data.guests || []);
+    } catch (error) {
+      console.error("Fetch guests error:", error);
+      toast.error("Erro ao carregar convidados");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatPhone = (value: string) => {
@@ -108,39 +148,69 @@ const Admin = () => {
       return;
     }
 
-    setAdding(true);
-    const cleanPhone = newPhone.replace(/\D/g, "");
-
-    const { error } = await supabase.from("guests").insert({
-      name: newName.trim(),
-      phone: cleanPhone,
-    });
-
-    setAdding(false);
-
-    if (error) {
-      toast.error("Erro ao adicionar convidado");
+    const token = getAdminToken();
+    if (!token) {
+      handleLogout();
       return;
     }
 
-    toast.success("Convidado adicionado!");
-    setNewName("");
-    setNewPhone("");
-    fetchGuests();
+    setAdding(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-guests", {
+        body: { 
+          action: "add", 
+          name: newName.trim(), 
+          phone: newPhone.replace(/\D/g, "") 
+        },
+        headers: { "x-admin-token": token },
+      });
+
+      if (error) throw error;
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success("Convidado adicionado!");
+      setNewName("");
+      setNewPhone("");
+      fetchGuests();
+    } catch (error: any) {
+      console.error("Add guest error:", error);
+      toast.error(error.message || "Erro ao adicionar convidado");
+    } finally {
+      setAdding(false);
+    }
   };
 
   const deleteGuest = async (id: string, name: string) => {
     if (!confirm(`Remover ${name} da lista?`)) return;
 
-    const { error } = await supabase.from("guests").delete().eq("id", id);
-
-    if (error) {
-      toast.error("Erro ao remover convidado");
+    const token = getAdminToken();
+    if (!token) {
+      handleLogout();
       return;
     }
 
-    toast.success("Convidado removido");
-    fetchGuests();
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-guests", {
+        body: { action: "delete", id },
+        headers: { "x-admin-token": token },
+      });
+
+      if (error) throw error;
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success("Convidado removido");
+      fetchGuests();
+    } catch (error: any) {
+      console.error("Delete guest error:", error);
+      toast.error(error.message || "Erro ao remover convidado");
+    }
   };
 
   const confirmedCount = guests.filter((g) => g.confirmed).length;
