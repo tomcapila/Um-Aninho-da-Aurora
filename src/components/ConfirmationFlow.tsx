@@ -9,7 +9,6 @@ import { Phone, Users, PartyPopper, ArrowLeft } from "lucide-react";
 interface Guest {
   id: string;
   name: string;
-  phone: string;
   confirmed: boolean;
 }
 
@@ -43,26 +42,38 @@ export const ConfirmationFlow = () => {
     setLoading(true);
     const cleanPhone = phone.replace(/\D/g, "");
 
-    const { data, error } = await supabase
-      .from("guests")
-      .select("*")
-      .eq("phone", cleanPhone);
+    try {
+      const { data, error } = await supabase.functions.invoke("guest-rsvp", {
+        body: { action: "search", phone: cleanPhone },
+      });
 
-    setLoading(false);
+      if (error) throw error;
 
-    if (error) {
+      if (data.error) {
+        // Handle rate limiting
+        if (data.error.includes("Muitas buscas")) {
+          toast.error(data.error);
+          return;
+        }
+        throw new Error(data.error);
+      }
+
+      const guests = data.guests || [];
+
+      if (guests.length === 0) {
+        toast.error("Nenhum convidado encontrado para este telefone");
+        return;
+      }
+
+      setGuests(guests);
+      setSelectedGuests(guests.filter((g: Guest) => g.confirmed).map((g: Guest) => g.id));
+      setStep("select");
+    } catch (error) {
+      console.error("Search error:", error);
       toast.error("Erro ao buscar convidados");
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    if (!data || data.length === 0) {
-      toast.error("Nenhum convidado encontrado para este telefone");
-      return;
-    }
-
-    setGuests(data);
-    setSelectedGuests(data.filter((g) => g.confirmed).map((g) => g.id));
-    setStep("select");
   };
 
   const toggleGuest = (id: string) => {
@@ -73,19 +84,31 @@ export const ConfirmationFlow = () => {
 
   const confirmAttendance = async () => {
     setLoading(true);
+    const cleanPhone = phone.replace(/\D/g, "");
 
-    // Update all guests: confirmed = true if selected, false otherwise
-    const updates = guests.map((guest) =>
-      supabase
-        .from("guests")
-        .update({ confirmed: selectedGuests.includes(guest.id) })
-        .eq("id", guest.id)
-    );
+    try {
+      const { data, error } = await supabase.functions.invoke("guest-rsvp", {
+        body: { 
+          action: "confirm", 
+          phone: cleanPhone,
+          guestIds: selectedGuests 
+        },
+      });
 
-    await Promise.all(updates);
-    setLoading(false);
-    setStep("success");
-    toast.success("Presença confirmada com sucesso!");
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setStep("success");
+      toast.success("Presença confirmada com sucesso!");
+    } catch (error) {
+      console.error("Confirm error:", error);
+      toast.error("Erro ao confirmar presença");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const reset = () => {
