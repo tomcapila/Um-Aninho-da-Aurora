@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Sparkles } from "@/components/Sparkles";
 import { ConfirmationFlow } from "@/components/ConfirmationFlow";
+import { Countdown } from "@/components/Countdown";
 import { Settings } from "lucide-react";
 import auroraBanner from "@/assets/aurora-banner.jpg";
 
@@ -52,7 +53,7 @@ const Index = () => {
         {/* Event Details */}
         <div className="max-w-md mx-auto mb-8 md:mb-12 animate-slide-up">
           <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-aurora-lg border">
-            <div className="grid grid-cols-2 gap-6 text-center">
+            <div className="grid grid-cols-2 gap-6 text-center mb-6">
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm uppercase tracking-wide">Data</p>
                 <p className="font-display text-xl font-semibold text-foreground">
@@ -67,6 +68,11 @@ const Index = () => {
                 </p>
                 <p className="text-muted-foreground">em ponto</p>
               </div>
+            </div>
+            
+            {/* Countdown */}
+            <div className="pt-4 border-t border-border/50">
+              <Countdown />
             </div>
           </div>
         </div>
