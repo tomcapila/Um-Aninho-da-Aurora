@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, User, Phone, Check, X, Users, Lock, LogOut } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, User, Phone, Check, X, Users, Lock, LogOut, Upload, FileText, AlertCircle } from "lucide-react";
 
 interface Guest {
   id: string;
@@ -26,6 +26,11 @@ const Admin = () => {
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [adding, setAdding] = useState(false);
+  
+  // CSV Import state
+  const [importing, setImporting] = useState(false);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getAdminToken = () => localStorage.getItem("aurora_admin_token");
 
@@ -213,6 +218,88 @@ const Admin = () => {
     }
   };
 
+  const parseCSV = (csvText: string): { name: string; phone: string }[] => {
+    const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+    const guests: { name: string; phone: string }[] = [];
+    
+    for (const line of lines) {
+      // Skip header row if it contains "nome" or "name"
+      if (line.toLowerCase().includes('nome') && line.toLowerCase().includes('telefone')) continue;
+      if (line.toLowerCase().includes('name') && line.toLowerCase().includes('phone')) continue;
+      
+      // Try to parse as CSV (comma or semicolon separated)
+      const parts = line.includes(';') ? line.split(';') : line.split(',');
+      
+      if (parts.length >= 2) {
+        const name = parts[0].trim().replace(/^["']|["']$/g, '');
+        const phone = parts[1].trim().replace(/^["']|["']$/g, '');
+        
+        if (name && phone) {
+          guests.push({ name, phone });
+        }
+      }
+    }
+    
+    return guests;
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
+      toast.error("Por favor, selecione um arquivo .csv ou .txt");
+      return;
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      handleLogout();
+      return;
+    }
+
+    setImporting(true);
+    setImportErrors([]);
+
+    try {
+      const text = await file.text();
+      const parsedGuests = parseCSV(text);
+      
+      if (parsedGuests.length === 0) {
+        toast.error("Nenhum convidado encontrado no arquivo");
+        setImporting(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("admin-guests", {
+        body: { action: "import", guests: parsedGuests },
+        headers: { "x-admin-token": token },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        setImportErrors(data.details || [data.error]);
+        toast.error(data.error);
+      } else {
+        toast.success(`${data.imported} convidados importados com sucesso!`);
+        if (data.errors && data.errors.length > 0) {
+          setImportErrors(data.errors);
+        }
+        fetchGuests();
+      }
+    } catch (error: any) {
+      console.error("Import error:", error);
+      toast.error(error.message || "Erro ao importar convidados");
+    } finally {
+      setImporting(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const confirmedCount = guests.filter((g) => g.confirmed).length;
   const totalCount = guests.length;
 
@@ -347,7 +434,7 @@ const Admin = () => {
         </div>
 
         {/* Add Guest Form */}
-        <div className="bg-card rounded-xl p-6 border shadow-sm mb-8">
+        <div className="bg-card rounded-xl p-6 border shadow-sm mb-6">
           <h2 className="font-display font-semibold text-lg mb-4 flex items-center gap-2">
             <Plus className="w-5 h-5 text-primary" />
             Adicionar Convidado
@@ -385,6 +472,64 @@ const Admin = () => {
             >
               {adding ? "Adicionando..." : "Adicionar"}
             </Button>
+          </div>
+        </div>
+
+        {/* CSV Import */}
+        <div className="bg-card rounded-xl p-6 border shadow-sm mb-8">
+          <h2 className="font-display font-semibold text-lg mb-4 flex items-center gap-2">
+            <Upload className="w-5 h-5 text-primary" />
+            Importar Lista (CSV)
+          </h2>
+
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+              <p className="text-sm text-foreground mb-2">
+                Selecione um arquivo CSV para importar convidados
+              </p>
+              <p className="text-xs text-muted-foreground mb-4">
+                Formato: nome,telefone (uma linha por convidado)
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="csv-upload"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+              >
+                {importing ? "Importando..." : "Escolher Arquivo"}
+              </Button>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-xs font-medium text-foreground mb-2">Exemplo de formato:</p>
+              <code className="text-xs text-muted-foreground block">
+                João Silva,11999998888<br />
+                Maria Santos,11988887777<br />
+                Pedro Oliveira,11977776666
+              </code>
+            </div>
+
+            {importErrors.length > 0 && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-destructive mb-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Erros na importação:</span>
+                </div>
+                <ul className="text-xs text-destructive/80 space-y-1">
+                  {importErrors.map((error, i) => (
+                    <li key={i}>• {error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 

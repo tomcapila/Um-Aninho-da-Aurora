@@ -118,6 +118,82 @@ serve(async (req) => {
         );
       }
 
+      case 'import': {
+        const { guests: guestList } = params;
+        
+        if (!Array.isArray(guestList) || guestList.length === 0) {
+          return new Response(
+            JSON.stringify({ error: 'Lista de convidados vazia ou inválida' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (guestList.length > 500) {
+          return new Response(
+            JSON.stringify({ error: 'Máximo de 500 convidados por importação' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const validGuests: { name: string; phone: string }[] = [];
+        const errors: string[] = [];
+
+        for (let i = 0; i < guestList.length; i++) {
+          const guest = guestList[i];
+          const lineNum = i + 1;
+          
+          if (!guest.name || typeof guest.name !== 'string' || guest.name.trim().length === 0) {
+            errors.push(`Linha ${lineNum}: Nome inválido`);
+            continue;
+          }
+          
+          if (guest.name.length > 100) {
+            errors.push(`Linha ${lineNum}: Nome muito longo`);
+            continue;
+          }
+
+          const cleanPhone = String(guest.phone || '').replace(/\D/g, '');
+          if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+            errors.push(`Linha ${lineNum}: Telefone inválido (${guest.name})`);
+            continue;
+          }
+
+          validGuests.push({
+            name: guest.name.trim(),
+            phone: cleanPhone,
+          });
+        }
+
+        if (validGuests.length === 0) {
+          return new Response(
+            JSON.stringify({ 
+              error: 'Nenhum convidado válido para importar',
+              details: errors.slice(0, 10) 
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const { data, error } = await supabase
+          .from('guests')
+          .insert(validGuests)
+          .select();
+
+        if (error) throw error;
+
+        console.log(`Admin imported ${data.length} guests`);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            imported: data.length,
+            errors: errors.length > 0 ? errors.slice(0, 10) : undefined,
+            totalErrors: errors.length
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       case 'delete': {
         const { id } = params;
         
