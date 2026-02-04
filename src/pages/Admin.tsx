@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, User, Phone, Check, X, Users, Lock, LogOut, Upload, FileText, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, User, Phone, Check, X, Users, Lock, LogOut, Upload, FileText, AlertCircle, Baby } from "lucide-react";
 
 interface Guest {
   id: string;
@@ -302,6 +302,10 @@ const Admin = () => {
 
   const confirmedCount = guests.filter((g) => g.confirmed).length;
   const totalCount = guests.length;
+  const childrenCount = guests.filter((g) => g.name.includes('*')).length;
+  const confirmedChildrenCount = guests.filter((g) => g.name.includes('*') && g.confirmed).length;
+  const adultsCount = totalCount - childrenCount;
+  const confirmedAdultsCount = confirmedCount - confirmedChildrenCount;
 
   // Loading state while checking auth
   if (checkingAuth) {
@@ -408,7 +412,7 @@ const Admin = () => {
         </header>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-card rounded-xl p-4 border shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
@@ -428,6 +432,30 @@ const Admin = () => {
               <div>
                 <p className="text-2xl font-bold text-foreground">{confirmedCount}</p>
                 <p className="text-sm text-muted-foreground">Confirmados</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-card rounded-xl p-4 border shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{adultsCount}</p>
+                <p className="text-sm text-muted-foreground">Adultos</p>
+                <p className="text-xs text-aurora-gold">{confirmedAdultsCount} confirmados</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-card rounded-xl p-4 border shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-destructive/20 rounded-full flex items-center justify-center">
+                <Baby className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{childrenCount}</p>
+                <p className="text-sm text-muted-foreground">Crianças</p>
+                <p className="text-xs text-aurora-gold">{confirmedChildrenCount} confirmados</p>
               </div>
             </div>
           </div>
