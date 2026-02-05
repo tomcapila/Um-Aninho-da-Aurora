@@ -1,51 +1,124 @@
 
-# Plano: Ordenar e Agrupar Lista de Convidados
+
+# Plano: Melhorar Efeito de Aurora Boreal no Background
 
 ## Visao Geral
-Modificar a exibicao da lista de convidados na pagina Admin para mostrar confirmados primeiro e agrupar convidados pelo numero de telefone (familias juntas).
+Criar um efeito de aurora boreal mais imersivo e dinamico, com camadas animadas que simulam as faixas de luz ondulantes tipicas do fenomeno natural.
 
-## Mudancas Necessarias
+## Situacao Atual
+- Imagem estatica de fundo com filtro de saturacao
+- Overlay de gradiente simples
+- Sparkles (estrelas) coloridas
+- Animacao `auroraWave` que apenas ajusta brilho/saturacao
 
-### Arquivo: src/pages/Admin.tsx
+## Melhorias Propostas
 
-**1. Criar funcao de ordenacao**
-Adicionar logica para ordenar os convidados antes de renderizar:
+### 1. Novo Componente: AuroraBackground
+Criar um componente dedicado para o efeito de aurora com multiplas camadas animadas.
 
-```typescript
-const sortedGuests = [...guests].sort((a, b) => {
-  // Primeiro: confirmados antes de nao-confirmados
-  if (a.confirmed !== b.confirmed) {
-    return a.confirmed ? -1 : 1;
-  }
-  // Segundo: agrupar por telefone
-  return a.phone.localeCompare(b.phone);
-});
-```
+**Arquivo:** `src/components/AuroraBackground.tsx`
 
-**2. Atualizar renderizacao da lista**
-Substituir `guests.map()` por `sortedGuests.map()` na linha 580.
+Caracteristicas:
+- 3-4 camadas de gradientes semi-transparentes
+- Cada camada com animacao de movimento independente
+- Cores da aurora (verde, azul, rosa/roxo)
+- Efeito de blur para suavizar as transicoes
+- Adaptacao para modo dia (tons mais suaves)
 
-### Logica de Ordenacao
+### 2. Novas Animacoes CSS
+
+**Arquivo:** `src/index.css`
+
+Adicionar keyframes para:
+- `aurora-drift-1`: Movimento horizontal lento (20s)
+- `aurora-drift-2`: Movimento diagonal (25s)  
+- `aurora-drift-3`: Ondulacao vertical (15s)
+- `aurora-shimmer`: Variacao de opacidade sutil
+
+### 3. Estrutura das Camadas
 
 ```text
-Ordem de prioridade:
-1. Confirmados (confirmed = true) aparecem primeiro
-2. Dentro de cada grupo (confirmados/nao-confirmados), 
-   agrupar por telefone para manter familias juntas
+Camada 1 (base):     Gradiente verde -> azul, movimento horizontal
+Camada 2 (meio):     Gradiente azul -> roxo, movimento diagonal
+Camada 3 (destaque): Gradiente rosa -> verde, ondulacao vertical
+Camada 4 (brilho):   Pontos de luz com blur intenso
 ```
 
-### Exemplo Visual
+### 4. Atualizacao da Pagina Index
 
-```text
-ANTES:                      DEPOIS:
-- Maria (tel: 111) [X]      - Joao (tel: 222) [✓]
-- Joao (tel: 222) [✓]       - Ana (tel: 222) [✓]   <- mesma familia
-- Pedro (tel: 333) [X]      - Maria (tel: 111) [X]
-- Ana (tel: 222) [✓]        - Pedro (tel: 333) [X]
-```
+**Arquivo:** `src/pages/Index.tsx`
+
+- Substituir overlay simples pelo novo componente `AuroraBackground`
+- Manter compatibilidade com modo dia/noite
+- Ajustar opacidade baseado no modo
 
 ## Detalhes Tecnicos
 
-- Usar `useMemo` para evitar re-ordenacao desnecessaria a cada render
-- Ordenacao acontece apenas no frontend (nao altera dados no banco)
-- Familias (mesmo telefone) ficam visualmente agrupadas
+### Estrutura do Componente AuroraBackground
+
+```typescript
+interface AuroraBackgroundProps {
+  isNightMode: boolean;
+}
+
+// Camadas com gradientes conicos/lineares
+// Animacoes CSS com transform e opacity
+// mix-blend-mode para mesclagem de cores
+```
+
+### Novas Animacoes (CSS)
+
+```css
+@keyframes aurora-drift-1 {
+  0%, 100% { transform: translateX(-10%) rotate(0deg); }
+  50% { transform: translateX(10%) rotate(3deg); }
+}
+
+@keyframes aurora-drift-2 {
+  0%, 100% { transform: translateY(-5%) scale(1); }
+  50% { transform: translateY(5%) scale(1.1); }
+}
+
+@keyframes aurora-shimmer {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+```
+
+### Paleta de Cores (Modo Noturno)
+
+| Cor | HSL | Uso |
+|-----|-----|-----|
+| Verde Aurora | 160, 100%, 50% | Camada principal |
+| Azul Celeste | 195, 100%, 50% | Transicao |
+| Rosa/Magenta | 320, 100%, 55% | Acentos |
+| Roxo Profundo | 280, 80%, 40% | Base |
+
+### Paleta de Cores (Modo Dia)
+
+| Cor | HSL | Uso |
+|-----|-----|-----|
+| Rosa Suave | 340, 60%, 85% | Camada principal |
+| Coral | 15, 70%, 80% | Transicao |
+| Dourado | 40, 80%, 75% | Acentos |
+
+## Arquivos a Modificar
+
+1. **src/components/AuroraBackground.tsx** (novo)
+   - Componente com camadas de gradientes animados
+
+2. **src/index.css**
+   - Novas keyframes de animacao
+   - Classes utilitarias para aurora
+
+3. **src/pages/Index.tsx**
+   - Integrar novo componente
+   - Remover overlay antigo
+
+## Resultado Esperado
+
+- Efeito visual que simula faixas de luz da aurora boreal
+- Movimento fluido e organico das cores
+- Transicao suave entre modo dia e noite
+- Performance otimizada com CSS animations (GPU-accelerated)
+
