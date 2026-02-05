@@ -6,6 +6,7 @@ import { Countdown } from "@/components/Countdown";
 import { Settings, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import auroraBanner from "@/assets/aurora-banner.jpg";
+ import { AuroraBackground } from "@/components/AuroraBackground";
 
 const Index = () => {
   const [isNightMode, setIsNightMode] = useState(() => {
@@ -44,13 +45,8 @@ const Index = () => {
         }}
       />
       
-      {/* Aurora glow overlay for night mode */}
-      {isNightMode && (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-[hsl(160,100%,50%,0.1)] to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-[hsl(220,50%,5%,0.8)] to-transparent" />
-        </div>
-      )}
+       {/* Aurora Background Effect */}
+       <AuroraBackground isNightMode={isNightMode} />
       
       <Sparkles isNightMode={isNightMode} />
 
