@@ -172,7 +172,7 @@ const Index = () => {
 
         {/* Footer */}
         <footer className="text-center mt-16 text-muted-foreground text-sm">
-          <p>Feito com ✨ para Aurora</p>
+          <p>Feito com 💗 para Aurora</p>
         </footer>
       </div>
     </div>
