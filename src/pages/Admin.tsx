@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -307,6 +307,18 @@ const Admin = () => {
   const adultsCount = totalCount - childrenCount;
   const confirmedAdultsCount = confirmedCount - confirmedChildrenCount;
 
+  // Ordenar: confirmados primeiro, depois agrupar por telefone (famílias juntas)
+  const sortedGuests = useMemo(() => {
+    return [...guests].sort((a, b) => {
+      // Primeiro: confirmados antes de não-confirmados
+      if (a.confirmed !== b.confirmed) {
+        return a.confirmed ? -1 : 1;
+      }
+      // Segundo: agrupar por telefone
+      return a.phone.localeCompare(b.phone);
+    });
+  }, [guests]);
+
   // Loading state while checking auth
   if (checkingAuth) {
     return (
@@ -577,7 +589,7 @@ const Admin = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {guests.map((guest) => (
+              {sortedGuests.map((guest) => (
                 <div
                   key={guest.id}
                   className="flex items-center justify-between bg-card rounded-lg p-4 border shadow-sm"
